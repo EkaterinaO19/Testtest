@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Урок 2.3 — Торговец в деревне</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#4CAF50;--dark-green:#1B5E20;--lime:#CDDC39;
+    --stone:#90A4AE;--bg:#0d1b2a;--panel:#0f2540;
+    --gold:#FFD700;--red:#f44336;--blue:#1565c0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow-x:hidden}
+  body{font-family:'Nunito',sans-serif;background:var(--bg);color:#e8f5e9;font-size:14px}
+
+  /* ── layout ── */
+  .wrap{max-width:780px;margin:0 auto;padding:16px}
+
+  /* ── task header ── */
+  .task-hd{
+    display:flex;align-items:flex-start;justify-content:space-between;
+    gap:12px;margin-bottom:14px;
+    padding:14px 16px;
+    background:linear-gradient(135deg,#0a1e38,#112d50);
+    border:1px solid rgba(76,175,80,.35);
+    border-radius:6px;
+  }
+  .task-hd-left{}
+  .task-badge{
+    font-family:'Press Start 2P',monospace;font-size:7px;
+    padding:5px 10px;background:var(--blue);color:#fff;border-radius:3px;
+    display:inline-block;margin-bottom:8px;
+  }
+  .task-title{font-size:17px;font-weight:800;color:#fff;line-height:1.3}
+  .task-sub{font-size:12px;color:var(--stone);margin-top:3px}
+  .xp-chip{
+    font-family:'Press Start 2P',monospace;font-size:8px;
+    padding:6px 12px;background:rgba(255,215,0,.12);
+    border:1px solid rgba(255,215,0,.3);border-radius:4px;
+    color:var(--gold);white-space:nowrap;flex-shrink:0;
+  }
+
+  /* ── requirements ── */
+  .reqs{margin-bottom:14px;display:flex;flex-direction:column;gap:5px}
+  .req{
+    display:flex;align-items:center;gap:8px;
+    padding:7px 12px;background:rgba(0,0,0,.25);
+    border-radius:4px;font-size:13px;color:#90a4ae;
+    border-left:3px solid rgba(76,175,80,.2);
+    transition:all .25s;
+  }
+  .req.done{color:var(--lime);border-left-color:var(--green);background:rgba(76,175,80,.08)}
+  .req-check{
+    width:18px;height:18px;border:2px solid currentColor;border-radius:3px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;flex-shrink:0;font-weight:900;
+  }
+
+  /* ── tabs ── */
+  .tabs{display:flex;margin-bottom:10px;border:1.5px solid rgba(76,175,80,.3);border-radius:5px;overflow:hidden}
+  .tab{
+    flex:1;padding:9px 6px;background:rgba(0,0,0,.3);border:none;
+    color:var(--stone);font-family:'Press Start 2P',monospace;font-size:6px;
+    cursor:pointer;transition:all .15s;border-right:1px solid rgba(76,175,80,.2);
+    line-height:1.9;display:flex;align-items:center;justify-content:center;gap:5px;
+  }
+  .tab:last-child{border-right:none}
+  .tab.active{background:rgba(76,175,80,.15);color:var(--lime)}
+  .tab:hover:not(.active){background:rgba(76,175,80,.06)}
+  .tab-icon{font-size:13px}
+
+  .panel{display:none}
+  .panel.active{display:block;animation:fadeIn .2s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ── code editor ── */
+  .editor{
+    width:100%;min-height:130px;background:#050d1a;
+    border:1.5px solid rgba(76,175,80,.3);border-radius:4px;
+    color:#e8f5e9;font-family:'Courier New',monospace;
+    font-size:13px;line-height:1.75;padding:12px;
+    resize:vertical;outline:none;transition:border-color .2s;
+  }
+  .editor:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(76,175,80,.12)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px;align-items:center}
+  .chip-label{font-size:11px;color:#546e7a}
+  .chip{
+    font-size:11px;padding:2px 9px;
+    border:1px solid rgba(84,110,122,.3);border-radius:10px;
+    color:var(--stone);cursor:pointer;transition:all .15s;
+    background:rgba(0,0,0,.2);
+  }
+  .chip:hover{border-color:var(--green);color:var(--lime)}
+
+  /* ── image panel ── */
+  .drop-zone{
+    border:2px dashed rgba(76,175,80,.4);border-radius:6px;
+    padding:28px 16px;text-align:center;cursor:pointer;
+    transition:all .2s;background:rgba(0,0,0,.2);
+  }
+  .drop-zone.over{border-color:var(--green);background:rgba(76,175,80,.07)}
+  .drop-zone:hover{border-color:rgba(76,175,80,.65)}
+  .drop-icon{font-size:36px;display:block;margin-bottom:8px}
+  .drop-title{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--lime);margin-bottom:6px}
+  .drop-sub{font-size:12px;color:var(--stone);line-height:1.6}
+  .drop-fmts{font-size:10px;color:#37474f;margin-top:6px}
+  #imgInput{display:none}
+  .preview-wrap{display:none;margin-top:10px;position:relative}
+  .preview-wrap.on{display:block;animation:fadeIn .25s ease}
+  .preview-img{width:100%;max-height:220px;object-fit:contain;border-radius:4px;border:1px solid rgba(76,175,80,.25);background:#050d1a}
+  .rm-btn{position:absolute;top:6px;right:6px;background:rgba(244,67,54,.85);border:none;border-radius:3px;color:#fff;font-size:11px;font-weight:800;padding:3px 8px;cursor:pointer}
+  .ai-msg{
+    display:none;margin-top:8px;padding:10px 14px;
+    background:rgba(130,177,255,.07);border:1px solid rgba(130,177,255,.2);
+    border-radius:4px;font-size:12px;color:#90caf9;
+    align-items:center;gap:8px;
+  }
+  .ai-msg.on{display:flex;animation:fadeIn .2s ease}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spin{display:inline-block;animation:spin 1s linear infinite}
+
+  /* ── iframe panel ── */
+  .ide-presets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center}
+  .ide-label{font-size:11px;color:#546e7a}
+  .preset{font-size:12px;padding:4px 11px;border:1px solid rgba(76,175,80,.25);border-radius:10px;color:var(--stone);cursor:pointer;transition:all .15s;background:rgba(0,0,0,.2)}
+  .preset:hover{border-color:var(--green);color:var(--lime)}
+  .url-row{display:flex;gap:8px;margin-bottom:10px}
+  .url-input{
+    flex:1;background:#050d1a;border:1.5px solid rgba(76,175,80,.3);border-radius:4px;
+    color:#e8f5e9;font-family:'Courier New',monospace;font-size:12px;padding:9px 12px;outline:none;
+  }
+  .url-input:focus{border-color:var(--green)}
+  .url-input::placeholder{color:#37474f}
+  .load-btn{
+    font-family:'Press Start 2P',monospace;font-size:6px;padding:9px 14px;
+    background:var(--panel);border:1.5px solid rgba(76,175,80,.4);color:var(--lime);
+    border-radius:3px;cursor:pointer;white-space:nowrap;transition:all .15s;
+  }
+  .load-btn:hover{border-color:var(--green);background:rgba(76,175,80,.1)}
+  .frame-wrap{border:1.5px solid rgba(76,175,80,.3);border-radius:4px;overflow:hidden;background:#050d1a;min-height:220px}
+  .frame-bar{display:flex;align-items:center;gap:6px;padding:7px 10px;background:rgba(0,0,0,.5);border-bottom:1px solid rgba(76,175,80,.1)}
+  .dot{width:9px;height:9px;border-radius:50%}
+  .dr{background:#f44336}.dy{background:#ffc107}.dg{background:#4caf50}
+  .frame-addr{flex:1;font-family:'Courier New',monospace;font-size:10px;color:#546e7a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rel-btn{font-size:13px;background:none;border:none;color:var(--stone);cursor:pointer}
+  .rel-btn:hover{color:var(--lime)}
+  .frame-embed{width:100%;height:300px;border:none;display:block}
+  .frame-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;height:220px;color:#37474f;gap:10px}
+  .frame-ph-icon{font-size:40px;opacity:.4}
+  .frame-ph-text{font-family:'Press Start 2P',monospace;font-size:7px;text-align:center;line-height:2}
+  .frame-note{margin-top:8px;font-size:11px;color:#37474f;line-height:1.6}
+
+  /* ── buttons ── */
+  .btn-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .btn{font-family:'Press Start 2P',monospace;font-size:7px;padding:11px 18px;border:none;border-radius:3px;cursor:pointer;transition:all .15s}
+  .btn:active{transform:translateY(1px)}
+  .btn-run{background:var(--green);color:#000;box-shadow:0 3px 0 var(--dark-green)}
+  .btn-run:hover{background:#66bb6a}
+  .btn-run:active{box-shadow:none}
+  .btn-hint{background:transparent;color:var(--gold);border:1.5px solid var(--gold)}
+  .btn-hint:hover{background:rgba(255,215,0,.08)}
+  .btn-reset{background:transparent;color:var(--stone);border:1.5px solid rgba(144,164,174,.25)}
+  .btn-reset:hover{border-color:var(--stone)}
+
+  /* ── hint box ── */
+  .hint-box{display:none;margin-top:10px;padding:14px 16px;background:rgba(255,215,0,.05);border:1px solid rgba(255,215,0,.2);border-radius:4px;animation:fadeIn .2s ease}
+  .hint-box.on{display:block}
+  .hint-title{font-size:11px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+  .hint-step{font-size:12px;line-height:1.7;color:#cfd8dc;padding-left:10px;border-left:2px solid rgba(255,215,0,.25);margin-bottom:5px}
+
+  /* ── output ── */
+  .output{display:none;margin-top:10px;background:#020913;border:1px solid rgba(76,175,80,.2);border-radius:4px;overflow:hidden}
+  .output.on{display:block;animation:fadeIn .25s ease}
+  .out-hd{padding:7px 12px;background:rgba(0,0,0,.5);border-bottom:1px solid rgba(255,255,255,.04);font-family:'Press Start 2P',monospace;font-size:6px;color:var(--stone);display:flex;align-items:center;gap:6px}
+  .odot{width:7px;height:7px;border-radius:50%}
+  .out-body{padding:12px;font-family:'Courier New',monospace;font-size:12px;line-height:1.75;color:#a5d6a7;white-space:pre-wrap;min-height:48px}
+  .out-body.err{color:#ef9a9a}
+
+  /* ── result ── */
+  .result{display:none;margin-top:10px;padding:14px 16px;border-radius:4px;animation:fadeIn .3s ease}
+  .result.ok{display:block;background:rgba(76,175,80,.1);border:1.5px solid var(--green)}
+  .result.fail{display:block;background:rgba(244,67,54,.07);border:1.5px solid var(--red)}
+  .result-title{font-family:'Press Start 2P',monospace;font-size:9px;margin-bottom:6px}
+  .result.ok .result-title{color:var(--lime)}
+  .result.fail .result-title{color:var(--red)}
+  .result-desc{font-size:13px;line-height:1.6;color:#b2dfdb}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- task header -->
+  <div class="task-hd">
+    <div class="task-hd-left">
+      <div class="task-badge">УРОК 2.3</div>
+      <div class="task-title">⚔️ Торговец в деревне</div>
+      <div class="task-sub">input() · int() · f-строки · Minecraft</div>
+    </div>
+    <div class="xp-chip">+100 XP</div>
+  </div>
+
+  <!-- task description -->
+  <div style="padding:12px 14px;background:rgba(76,175,80,.07);border-left:3px solid var(--green);border-radius:0 4px 4px 0;margin-bottom:12px;font-size:13px;line-height:1.65;color:#c8e6c9">
+    Стив пришёл к торговцу в деревне. Напиши программу-диалог: торговец спрашивает <strong>имя</strong> и <strong>количество блоков</strong>, которые хочет купить игрок, и называет <strong>итоговую цену</strong> (1 блок = 2 изумруда).
+  </div>
+
+  <!-- requirements -->
+  <div class="reqs">
+    <div class="req" id="r1"><div class="req-check">?</div>Спросить имя игрока через input()</div>
+    <div class="req" id="r2"><div class="req-check">?</div>Спросить количество блоков — преобразовать в int()</div>
+    <div class="req" id="r3"><div class="req-check">?</div>Посчитать цену: количество × 2</div>
+    <div class="req" id="r4"><div class="req-check">?</div>Вывести сообщение с именем и ценой</div>
+  </div>
+
+  <!-- input mode tabs -->
+  <div class="tabs">
+    <button class="tab active" id="tText" onclick="mode('text')"><span class="tab-icon">⌨️</span>КОД</button>
+    <button class="tab" id="tImage" onclick="mode('image')"><span class="tab-icon">🖼️</span>СКРИНШОТ</button>
+    <button class="tab" id="tIframe" onclick="mode('iframe')"><span class="tab-icon">🌐</span>IDE</button>
+  </div>
+
+  <!-- TEXT -->
+  <div class="panel active" id="pText">
+    <textarea class="editor" id="ed" spellcheck="false"
+      placeholder="# Напиши программу здесь...&#10;&#10;imya = input(...)&#10;..."></textarea>
+    <div class="chips">
+      <span class="chip-label">Вставить:</span>
+      <span class="chip" onclick="ins('input(\"Как тебя зовут? \")')">input()</span>
+      <span class="chip" onclick="ins('int(input(\"Сколько блоков? \"))')">int(input())</span>
+      <span class="chip" onclick="ins('f\"Привет, {imya}!\"')">f-строка</span>
+      <span class="chip" onclick="ins('cena = kol * 2')">× 2</span>
+    </div>
+  </div>
+
+  <!-- IMAGE -->
+  <div class="panel" id="pImage">
+    <div class="drop-zone" id="dz"
+      onclick="document.getElementById('imgInput').click()"
+      ondragover="dov(event)" ondragleave="dlv()" ondrop="ddr(event)">
+      <span class="drop-icon">📸</span>
+      <div class="drop-title">ПЕРЕТАЩИ СКРИНШОТ КОДА</div>
+      <div class="drop-sub">или нажми для выбора файла<br>Ctrl+V — вставить из буфера</div>
+      <div class="drop-fmts">PNG · JPG · GIF · WebP</div>
+    </div>
+    <input type="file" id="imgInput" accept="image/*" onchange="imgFile(event)">
+    <div class="preview-wrap" id="pw">
+      <img class="preview-img" id="pi" src="" alt="">
+      <button class="rm-btn" onclick="rmImg()">✕</button>
+    </div>
+    <div class="ai-msg" id="aim">
+      <span class="spin" id="aiIcon">⚙️</span>
+      <span id="aiTxt">Анализирую скриншот…</span>
+    </div>
+  </div>
+
+  <!-- IFRAME / IDE -->
+  <div class="panel" id="pIframe">
+    <div class="ide-presets">
+      <span class="ide-label">Открыть в:</span>
+      <span class="preset" onclick="lp('trinket')">🎒 Trinket</span>
+      <span class="preset" onclick="lp('programiz')">📗 Programiz</span>
+      <span class="preset" onclick="lp('replit')">🔁 Replit</span>
+      <span class="preset" onclick="lp('gdb')">🐛 OnlineGDB</span>
+    </div>
+    <div class="url-row">
+      <input class="url-input" id="iUrl" placeholder="https://trinket.io/python/new  или своя ссылка…" onkeydown="if(event.key==='Enter')lf()">
+      <button class="load-btn" onclick="lf()">▶ ОТКРЫТЬ</button>
+    </div>
+    <div class="frame-wrap">
+      <div class="frame-bar">
+        <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+        <span class="frame-addr" id="fAddr">— нет активного фрейма —</span>
+        <button class="rel-btn" onclick="rl()">↺</button>
+      </div>
+      <div id="fPh" class="frame-ph">
+        <span class="frame-ph-icon">🌐</span>
+        <span class="frame-ph-text">ВЫБЕРИ IDE ВЫШЕ<br>ИЛИ ВСТАВЬ ССЫЛКУ</span>
+      </div>
+      <iframe id="frm" class="frame-embed" style="display:none"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        allow="clipboard-write"></iframe>
+    </div>
+    <div class="frame-note">
+      💡 Напиши код в IDE → нажми <strong style="color:#78909c">«Проверить»</strong> ниже.<br>
+      Или переключись на вкладку «Код» и вставь туда готовый код.
+    </div>
+  </div>
+
+  <!-- buttons -->
+  <div class="btn-row">
+    <button class="btn btn-run" onclick="run()">▶ ПРОВЕРИТЬ</button>
+    <button class="btn btn-hint" onclick="hint()">💡 ПОДСКАЗКА</button>
+    <button class="btn btn-reset" onclick="reset()">↺ СБРОС</button>
+  </div>
+
+  <div class="hint-box" id="hb">
+    <div class="hint-title">💡 Пошаговая подсказка</div>
+    <div class="hint-step">1. <code>imya = input("Как тебя зовут? ")</code></div>
+    <div class="hint-step">2. <code>kol = int(input("Сколько блоков? "))</code></div>
+    <div class="hint-step">3. <code>cena = kol * 2</code></div>
+    <div class="hint-step">4. <code>print(f"Привет, {'{imya}'}! Цена: {'{cena}'} изумрудов")</code></div>
+  </div>
+
+  <div class="output" id="out">
+    <div class="out-hd">
+      <span class="odot" style="background:#f44336"></span>
+      <span class="odot" style="background:#ffc107"></span>
+      <span class="odot" style="background:#4caf50"></span>
+      &nbsp;Вывод
+    </div>
+    <div class="out-body" id="outTxt"></div>
+  </div>
+
+  <div class="result" id="res">
+    <div class="result-title" id="resT"></div>
+    <div class="result-desc" id="resD"></div>
+  </div>
+
+</div>
+
+<script>
+// ── state ──
+let cur='text', imgData=null, hintOn=false, done=false;
+
+// ── postMessage to parent (Stepik) ──
+function post(ok,score){ try{parent.postMessage({type:'stepik:result',success:ok,score},'*')}catch(_){} }
+
+// listen from parent
+window.addEventListener('message',e=>{
+  const d=e.data; if(!d||typeof d!='object') return;
+  if(d.type==='stepik:set_code'&&d.code){ document.getElementById('ed').value=d.code; mode('text'); }
+  if(d.type==='stepik:run') run();
+  if(d.type==='stepik:reset') reset();
+});
+
+// ── mode ──
+function mode(m){
+  cur=m;
+  ['text','image','iframe'].forEach(id=>{
+    const cap=id[0].toUpperCase()+id.slice(1);
+    document.getElementById('p'+cap).classList.toggle('active',id===m);
+    document.getElementById('t'+cap).classList.toggle('active',id===m);
+  });
+  document.getElementById('out').classList.remove('on');
+  document.getElementById('res').style.display='none';
+}
+
+// ── image ──
+function dov(e){e.preventDefault();document.getElementById('dz').classList.add('over')}
+function dlv(){document.getElementById('dz').classList.remove('over')}
+function ddr(e){e.preventDefault();dlv();const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadImg(f)}
+function imgFile(e){const f=e.target.files[0];if(f)loadImg(f)}
+function loadImg(f){
+  const r=new FileReader();
+  r.onload=ev=>{
+    imgData=ev.target.result;
+    document.getElementById('pi').src=imgData;
+    document.getElementById('pw').classList.add('on');
+    const aim=document.getElementById('aim');
+    aim.classList.add('on');
+    document.getElementById('aiTxt').textContent='Анализирую скриншот кода…';
+    document.getElementById('aiIcon').style.animation='spin 1s linear infinite';
+    setTimeout(()=>{
+      document.getElementById('aiTxt').textContent='Скриншот загружен. Нажми «Проверить» для анализа.';
+      document.getElementById('aiIcon').style.animation='none';
+      document.getElementById('aiIcon').textContent='✅';
+      aim.style.color='#a5d6a7';aim.style.borderColor='rgba(76,175,80,.3)';aim.style.background='rgba(76,175,80,.06)';
+    },1500);
+  };
+  r.readAsDataURL(f);
+}
+function rmImg(){
+  imgData=null;
+  document.getElementById('pw').classList.remove('on');
+  document.getElementById('aim').classList.remove('on');
+  document.getElementById('imgInput').value='';
+}
+document.addEventListener('paste',e=>{
+  if(cur!=='image') return;
+  for(const i of e.clipboardData?.items||[]){if(i.type.startsWith('image/')){loadImg(i.getAsFile());break;}}
+});
+
+// ── iframe / IDE ──
+const URLS={trinket:'https://trinket.io/python/new',programiz:'https://www.programiz.com/python-programming/online-compiler/',replit:'https://replit.com/new/python3',gdb:'https://www.onlinegdb.com/online_python_compiler'};
+function lp(k){document.getElementById('iUrl').value=URLS[k];lf()}
+function lf(){
+  const u=document.getElementById('iUrl').value.trim(); if(!u)return;
+  document.getElementById('fAddr').textContent=u;
+  const fr=document.getElementById('frm');
+  fr.src=u; fr.style.display='block';
+  document.getElementById('fPh').style.display='none';
+}
+function rl(){const fr=document.getElementById('frm');if(fr.src)fr.src=fr.src}
+
+// ── check ──
+function run(){
+  let code='';
+  if(cur==='text'){
+    code=document.getElementById('ed').value.trim();
+    if(!code){showOut('# Код пустой!',true);return;}
+  } else if(cur==='image'){
+    if(!imgData){showOut('# Загрузи скриншот!',true);return;}
+    code='imya=input()\nkol=int(input())\ncena=kol*2\nprint(f"{imya}{cena}")'; // mock OCR
+  } else {
+    code='imya=input()\nkol=int(input())\ncena=kol*2\nprint(f"{imya}{cena}")'; // mock IDE
+  }
+  const hi=code.includes('input(');
+  const ii=hi&&code.includes('int(');
+  const mx=/\*\s*2/.test(code);
+  const pr=code.includes('print(');
+  const sc=[hi,ii,mx,pr].filter(Boolean).length;
+  chk('r1',hi);chk('r2',ii);chk('r3',mx);chk('r4',pr);
+  let o='';
+  if(hi) o+='Как тебя зовут? → Алекс\n';
+  if(ii) o+='Сколько блоков? → 8\n';
+  if(sc>=3) o+='\nПривет, Алекс! Твой заказ: 16 изумрудов.';
+  if(!o) o='# Запускаю…';
+  showOut(o,false);
+  setTimeout(()=>showResult(sc),300);
+}
+function chk(id,ok){
+  const el=document.getElementById(id);
+  el.classList.toggle('done',ok);
+  el.querySelector('.req-check').textContent=ok?'✓':'?';
+}
+function showOut(txt,err){
+  const o=document.getElementById('out');
+  o.classList.add('on');
+  const b=document.getElementById('outTxt');
+  b.textContent=txt; b.className='out-body'+(err?' err':'');
+}
+function showResult(sc){
+  const r=document.getElementById('res');
+  const t=document.getElementById('resT');
+  const d=document.getElementById('resD');
+  if(sc>=4){
+    r.className='result ok'; t.textContent='🏆 ОТЛИЧНО! +100 XP';
+    d.textContent='Торговец доволен! Ты правильно использовал input(), int() и f-строку!';
+    post(true,sc);
+  } else if(sc>=2){
+    r.className='result fail'; t.textContent=`⚔️ ПОЧТИ! (${sc}/4)`;
+    d.textContent='Хорошее начало! Проверь все требования — нажми «Подсказка».';
+    post(false,sc);
+  } else {
+    r.className='result fail'; t.textContent='❌ ПОПРОБУЙ ЕЩЁ РАЗ';
+    d.textContent='Используй input() для вопроса и print() для вывода!';
+    post(false,sc);
+  }
+}
+function hint(){hintOn=!hintOn;document.getElementById('hb').classList.toggle('on',hintOn)}
+function reset(){
+  document.getElementById('ed').value='';
+  document.getElementById('out').classList.remove('on');
+  document.getElementById('res').style.display='none';
+  ['r1','r2','r3','r4'].forEach(id=>{
+    document.getElementById(id).classList.remove('done');
+    document.getElementById(id).querySelector('.req-check').textContent='?';
+  });
+  rmImg();
+}
+function ins(t){
+  const ta=document.getElementById('ed');
+  const p=ta.selectionStart;
+  ta.value=ta.value.slice(0,p)+t+ta.value.slice(ta.selectionEnd);
+  ta.focus();ta.selectionStart=ta.selectionEnd=p+t.length;
+}
+</script>
+</body>
+</html>
